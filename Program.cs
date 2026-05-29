@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Hashing
 {
@@ -8,55 +9,81 @@ namespace Hashing
     {
         static void Main(string[] args)
         {
-            TestHashingPerformance(1000000, 16);
-            TestHashingPerformance(10000000, 20);
+            RunOpgave3();
         }
 
-        static void TestHashingPerformance(int n, int l)
+        static void RunOpgave3()
         {
-            Console.WriteLine($"\nRunning test with n = {n}, l = {l} (Number of distinct keys = 2^{l})");
+            int n = 10_000_000;
+            int timeoutMs = 30_000;
 
-            // Generate random parameters for Multiply-Shift
-            Random rnd = new Random();
-            byte[] aShiftBytes = new byte[8];
-            rnd.NextBytes(aShiftBytes);
-            ulong aShift = BitConverter.ToUInt64(aShiftBytes, 0) | 1UL; // Ensure it's odd
+            Random rnd = new Random(42);
 
-            // Generate random parameters for Multiply-Mod-Prime
-            byte[] aPrimeBytes = new byte[12]; // ~96 bits, will mask down to 89
+            // Multiply-Shift parameters (reused across all l)
+            byte[] aBytes = new byte[8];
+            rnd.NextBytes(aBytes);
+            ulong aShift = BitConverter.ToUInt64(aBytes, 0) | 1UL;
+
+            // Multiply-Mod-Prime parameters
+            BigInteger p = (BigInteger.One << 89) - 1;
+            byte[] aPrimeBytes = new byte[12];
             byte[] bPrimeBytes = new byte[12];
             rnd.NextBytes(aPrimeBytes);
             rnd.NextBytes(bPrimeBytes);
-            
-            BigInteger p = (BigInteger.One << 89) - 1;
             BigInteger aPrime = new BigInteger(aPrimeBytes, isUnsigned: true) % p;
             BigInteger bPrime = new BigInteger(bPrimeBytes, isUnsigned: true) % p;
-            
-            // Generate stream
-            var stream = StreamGenerator.CreateStream(n, l);
 
-            // Test Multiply-Shift
-            ulong sumShift = 0;
-            Stopwatch swShift = Stopwatch.StartNew();
-            foreach (var item in stream)
+            Console.WriteLine($"Opgave 3 — Sum of squares, n = {n:N0}");
+            Console.WriteLine($"{"l",-4} {"2^l",-12} {"MultiplyShift (ms)",-22} {"MultiplyModPrime (ms)",-24} {"S (Shift)",-18} {"S (Prime)",-18}");
+            Console.WriteLine(new string('-', 100));
+
+            for (int l = 1; (1L << l) <= n; l++)
             {
-                sumShift += Opgave1.MultiplyShift(item.Item1, aShift, l);
-            }
-            swShift.Stop();
-            Console.WriteLine($"Multiply-Shift: Time = {swShift.ElapsedMilliseconds} ms, Sum = {sumShift}");
+                int capturedL = l;
 
-            // Regenerate stream
-            stream = StreamGenerator.CreateStream(n, l);
+                // Multiply-Shift
+                long sShift = 0;
+                long msShift = RunWithTimeout(timeoutMs, () =>
+                {
+                    var stream = StreamGenerator.CreateStream(n, capturedL);
+                    sShift = Opgave3.ComputeSumOfSquares(stream,
+                        x => Opgave1.MultiplyShift(x, aShift, capturedL), capturedL);
+                });
 
-            // Test Multiply-Mod-Prime
-            ulong sumPrime = 0;
-            Stopwatch swPrime = Stopwatch.StartNew();
-            foreach (var item in stream)
-            {
-                sumPrime += Opgave1.MultiplyModPrime(item.Item1, aPrime, bPrime, l);
+                if (msShift < 0)
+                {
+                    Console.WriteLine($"{l,-4} {(1L << l),-12:N0} TIMEOUT");
+                    break;
+                }
+
+                // Multiply-Mod-Prime
+                long sPrime = 0;
+                long msPrime = RunWithTimeout(timeoutMs, () =>
+                {
+                    var stream = StreamGenerator.CreateStream(n, capturedL);
+                    sPrime = Opgave3.ComputeSumOfSquares(stream,
+                        x => Opgave1.MultiplyModPrime(x, aPrime, bPrime, capturedL), capturedL);
+                });
+
+                if (msPrime < 0)
+                {
+                    Console.WriteLine($"{l,-4} {(1L << l),-12:N0} {msShift,-22} TIMEOUT");
+                    break;
+                }
+
+                Console.WriteLine($"{l,-4} {(1L << l),-12:N0} {msShift,-22} {msPrime,-24} {sShift,-18:N0} {sPrime,-18:N0}");
             }
-            swPrime.Stop();
-            Console.WriteLine($"Multiply-Mod-Prime: Time = {swPrime.ElapsedMilliseconds} ms, Sum = {sumPrime}");
+        }
+
+        // Returns elapsed ms, or -1 on timeout.
+        static long RunWithTimeout(int timeoutMs, Action action)
+        {
+            var sw = Stopwatch.StartNew();
+            var task = Task.Run(action);
+            if (!task.Wait(timeoutMs))
+                return -1;
+            sw.Stop();
+            return sw.ElapsedMilliseconds;
         }
     }
 }

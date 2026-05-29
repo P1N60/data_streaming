@@ -42,5 +42,12 @@ namespace Hashing
             }
             list.AddFirst((x, d));
         }
+
+        public IEnumerable<long> AllValues()
+        {
+            foreach (var bucket in _table)
+                foreach (var entry in bucket)
+                    yield return entry.value;
+        }
     }
 }

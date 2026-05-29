@@ -13,7 +13,8 @@ namespace Hashing
             //RunOpgave3();
             //RunOpgave4();
             //RunOpgave5();
-            RunOpgave6();
+            //RunOpgave6();
+            RunOpgave7();
         }
 
         static void RunOpgave3()
@@ -129,6 +130,14 @@ namespace Hashing
                                          Opgave5.S(x, a0, a1, a2, a3) == -1);
             Console.WriteLine($"\nAlle h(x) i [0, {1 << t}): {hGyldig}");
             Console.WriteLine($"Alle s(x) er 1 eller -1:   {sGyldig}");
+        }
+
+        static void RunOpgave7()
+        {
+            // l = 14 svarer til 2^14 = 16384 forskellige nøgler.
+            // Sæt l til den l-1 du fandt som grænsen i Opgave 3.
+            // t = 8 giver m = 256 tællere.
+            Opgave7.Run(l: 14, t: 8, n: 10_000_000);
         }
 
         static void RunOpgave6()

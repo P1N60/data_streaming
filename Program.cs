@@ -14,7 +14,8 @@ namespace Hashing
             //RunOpgave4();
             //RunOpgave5();
             //RunOpgave6();
-            RunOpgave7();
+            //RunOpgave7();
+            RunOpgave8();
         }
 
         static void RunOpgave3()
@@ -130,6 +131,11 @@ namespace Hashing
                                          Opgave5.S(x, a0, a1, a2, a3) == -1);
             Console.WriteLine($"\nAlle h(x) i [0, {1 << t}): {hGyldig}");
             Console.WriteLine($"Alle s(x) er 1 eller -1:   {sGyldig}");
+        }
+
+        static void RunOpgave8()
+        {
+            Opgave8.Run(l: 14, n: 10_000_000);
         }
 
         static void RunOpgave7()

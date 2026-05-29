@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+
 public static class StreamGenerator
 {
     public static IEnumerable<Tuple<ulong, int>> CreateStream(int n, int l)

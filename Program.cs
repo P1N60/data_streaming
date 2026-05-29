@@ -12,7 +12,8 @@ namespace Hashing
         {
             //RunOpgave3();
             //RunOpgave4();
-            RunOpgave5();
+            //RunOpgave5();
+            RunOpgave6();
         }
 
         static void RunOpgave3()
@@ -81,13 +82,11 @@ namespace Hashing
         {
             Console.WriteLine("\n=== Opgave 4 — 4-universel hashfunktion ===");
 
-            // generer fire tilfældige koefficienter
             BigInteger a0 = Opgave4.GenererKoefficient();
             BigInteger a1 = Opgave4.GenererKoefficient();
             BigInteger a2 = Opgave4.GenererKoefficient();
             BigInteger a3 = Opgave4.GenererKoefficient();
 
-            // test med nogle nøgler
             ulong[] keys = { 0UL, 1UL, 123456789UL, ulong.MaxValue };
 
             Console.WriteLine($"{"x",-25} {"g(x)",-30}");
@@ -98,7 +97,6 @@ namespace Hashing
                 Console.WriteLine($"{x,-25} {gx,-30}");
             }
 
-            // tjek at alle værdier ligger i [0, p)
             BigInteger P = (BigInteger.One << 89) - 1;
             bool alleGyldig = keys.All(x => Opgave4.G(x, a0, a1, a2, a3) < P);
             Console.WriteLine($"\nAlle værdier i [0, p): {alleGyldig}");
@@ -108,13 +106,12 @@ namespace Hashing
         {
             Console.WriteLine("\n=== Opgave 5 — h og s hashfunktioner ===");
 
-            // generer fire tilfældige koefficienter
             BigInteger a0 = Opgave4.GenererKoefficient();
             BigInteger a1 = Opgave4.GenererKoefficient();
             BigInteger a2 = Opgave4.GenererKoefficient();
             BigInteger a3 = Opgave4.GenererKoefficient();
 
-            int t = 4; // m = 2^4 = 16 tællere
+            int t = 4;
 
             ulong[] keys = { 0UL, 1UL, 123456789UL, ulong.MaxValue };
 
@@ -127,15 +124,50 @@ namespace Hashing
                 Console.WriteLine($"{x,-25} {hx,-10} {sx,-10}");
             }
 
-            // tjek at h altid er i [0, 2^t) og s altid er 1 eller -1
             bool hGyldig = keys.All(x => Opgave5.H(x, t, a0, a1, a2, a3) < (ulong)(1 << t));
-            bool sGyldig = keys.All(x => Opgave5.S(x, a0, a1, a2, a3) == 1 || 
+            bool sGyldig = keys.All(x => Opgave5.S(x, a0, a1, a2, a3) == 1 ||
                                          Opgave5.S(x, a0, a1, a2, a3) == -1);
             Console.WriteLine($"\nAlle h(x) i [0, {1 << t}): {hGyldig}");
             Console.WriteLine($"Alle s(x) er 1 eller -1:   {sGyldig}");
         }
 
-        // Returns elapsed ms, or -1 on timeout.
+        static void RunOpgave6()
+        {
+            Console.WriteLine("\n=== Opgave 6 — Count-Sketch ===");
+
+            int n = 1_000_000;  // strømlængde
+            int l = 10;         // 2^10 = 1024 forskellige nøgler
+            int t = 8;          // m = 2^8 = 256 tællere
+
+            // beregn eksakt S med hashing fra del 1
+            Random rnd = new Random(42);
+            byte[] aBytes = new byte[8];
+            rnd.NextBytes(aBytes);
+            ulong aShift = BitConverter.ToUInt64(aBytes, 0) | 1UL;
+
+            var streamS = StreamGenerator.CreateStream(n, l);
+            long exactS = Opgave3.ComputeSumOfSquares(streamS,
+                x => Opgave1.MultiplyShift(x, aShift, l), l);
+            Console.WriteLine($"Eksakt S = {exactS:N0}");
+
+            // kør count-sketch og beregn estimat X
+            BigInteger a0 = Opgave4.GenererKoefficient();
+            BigInteger a1 = Opgave4.GenererKoefficient();
+            BigInteger a2 = Opgave4.GenererKoefficient();
+            BigInteger a3 = Opgave4.GenererKoefficient();
+
+            var sketch = new CountSketch(t, a0, a1, a2, a3);
+
+            // processér strømmen
+            foreach (var par in StreamGenerator.CreateStream(n, l))
+                sketch.Update(par.Item1, par.Item2);
+
+            long X = sketch.ComputeEstimate();
+            Console.WriteLine($"Count-Sketch estimat X = {X:N0}");
+            Console.WriteLine($"Forskel: {Math.Abs(exactS - X):N0}");
+            Console.WriteLine($"Relativ fejl: {Math.Abs(exactS - X) / (double)exactS:P2}");
+        }
+
         static long RunWithTimeout(int timeoutMs, Action action)
         {
             var sw = Stopwatch.StartNew();

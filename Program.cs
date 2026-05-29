@@ -10,8 +10,9 @@ namespace Hashing
     {
         static void Main(string[] args)
         {
-            RunOpgave3();
-            RunOpgave4();
+            //RunOpgave3();
+            //RunOpgave4();
+            RunOpgave5();
         }
 
         static void RunOpgave3()
@@ -101,6 +102,37 @@ namespace Hashing
             BigInteger P = (BigInteger.One << 89) - 1;
             bool alleGyldig = keys.All(x => Opgave4.G(x, a0, a1, a2, a3) < P);
             Console.WriteLine($"\nAlle værdier i [0, p): {alleGyldig}");
+        }
+
+        static void RunOpgave5()
+        {
+            Console.WriteLine("\n=== Opgave 5 — h og s hashfunktioner ===");
+
+            // generer fire tilfældige koefficienter
+            BigInteger a0 = Opgave4.GenererKoefficient();
+            BigInteger a1 = Opgave4.GenererKoefficient();
+            BigInteger a2 = Opgave4.GenererKoefficient();
+            BigInteger a3 = Opgave4.GenererKoefficient();
+
+            int t = 4; // m = 2^4 = 16 tællere
+
+            ulong[] keys = { 0UL, 1UL, 123456789UL, ulong.MaxValue };
+
+            Console.WriteLine($"{"x",-25} {"h(x)",-10} {"s(x)",-10}");
+            Console.WriteLine(new string('-', 45));
+            foreach (var x in keys)
+            {
+                ulong hx = Opgave5.H(x, t, a0, a1, a2, a3);
+                int sx   = Opgave5.S(x, a0, a1, a2, a3);
+                Console.WriteLine($"{x,-25} {hx,-10} {sx,-10}");
+            }
+
+            // tjek at h altid er i [0, 2^t) og s altid er 1 eller -1
+            bool hGyldig = keys.All(x => Opgave5.H(x, t, a0, a1, a2, a3) < (ulong)(1 << t));
+            bool sGyldig = keys.All(x => Opgave5.S(x, a0, a1, a2, a3) == 1 || 
+                                         Opgave5.S(x, a0, a1, a2, a3) == -1);
+            Console.WriteLine($"\nAlle h(x) i [0, {1 << t}): {hGyldig}");
+            Console.WriteLine($"Alle s(x) er 1 eller -1:   {sGyldig}");
         }
 
         // Returns elapsed ms, or -1 on timeout.

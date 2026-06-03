@@ -1,0 +1,5 @@
+metode,ms_total,ms_per_exp
+Chaining,130,130
+CS m=2^4,840000,8400
+CS m=2^8,840000,8400
+CS m=2^12,860800,8608

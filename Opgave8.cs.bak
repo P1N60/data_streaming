@@ -30,7 +30,7 @@ namespace Hashing
             Console.WriteLine($"S = {exactS:N0}  (tid: {exactMs} ms)");
 
             // --- 2. Kør 100 eksperimenter for hvert t (m = 2^t) ---
-            int[] tValues = { 12 }; // RESUMING: Only running t=12 since t=4 and t=8 are done.
+            int[] tValues = { 4, 8, 12 };
             const int numExp = 100;
 
             long[] sketchTotalMs = new long[tValues.Length];
@@ -113,13 +113,10 @@ namespace Hashing
             }
 
             // Gem køretider til CSV til plot
-            using (var sw = new StreamWriter("opgave8_runtime.csv", append: true))
+            using (var sw = new StreamWriter("opgave8_runtime.csv"))
             {
-                if (new FileInfo("opgave8_runtime.csv").Length == 0)
-                {
-                    sw.WriteLine("metode,ms_total,ms_per_exp");
-                    sw.WriteLine($"Chaining,{exactMs},{exactMs}");
-                }
+                sw.WriteLine("metode,ms_total,ms_per_exp");
+                sw.WriteLine($"Chaining,{exactMs},{exactMs}");
                 for (int ti = 0; ti < tValues.Length; ti++)
                     sw.WriteLine($"CS m=2^{tValues[ti]},{sketchTotalMs[ti]},{sketchTotalMs[ti] / numExp}");
             }
